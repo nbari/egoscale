@@ -2,21 +2,23 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"reflect"
 	"strings"
 
 	"github.com/exoscale/egoscale"
+	flag "github.com/spf13/pflag"
 )
 
 func main() {
-	// XXX having all the methods!
+	// XXX having all the methods! ~> pkgreflect
 	methods := []interface{}{
 		&egoscale.ListVirtualMachines{},
 		&egoscale.ListZones{},
+		&egoscale.DeployVirtualMachine{},
 	}
 
 	if len(os.Args) <= 1 {
@@ -25,7 +27,8 @@ func main() {
 
 		fmt.Fprintln(os.Stderr, "Available commands:\n")
 		for _, m := range methods {
-			fmt.Fprintf(os.Stderr, "  %s\n", m.(egoscale.Command).APIName())
+			name := m.(egoscale.Command).APIName()
+			fmt.Fprintf(os.Stderr, "  %s\n", name)
 		}
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintln(os.Stderr, "no command found")
@@ -38,7 +41,7 @@ func main() {
 	var method interface{}
 	for _, m := range methods {
 		if c, ok := m.(egoscale.Command); ok {
-			if c.APIName() == command {
+			if m.(egoscale.Command).APIName() == command {
 				method = c
 			}
 		} else {
@@ -115,8 +118,19 @@ func populateVars(flagset *flag.FlagSet, value reflect.Value) error {
 			flagset.Float64Var(addr.(*float64), argName, 0., description)
 		case reflect.String:
 			flagset.StringVar(addr.(*string), argName, "", description)
-		case reflect.Slice, reflect.Map:
-			// pass
+		case reflect.Slice:
+			switch field.Type.Elem().Kind() {
+			case reflect.Uint8:
+				ip := (net.IP)(val.Bytes())
+				if ip == nil || ip.Equal(net.IPv4zero) {
+					/// XXX this doesn't work!
+					flagset.IPVar(&ip, argName, nil, description)
+				}
+			default:
+				log.Printf("[SKIP] Slice of type %s is not supported!", field.Type.Name())
+			}
+		case reflect.Map:
+			log.Printf("[SKIP] Type %s is not supported!", field.Name)
 		default:
 			log.Printf("[SKIP] Type %s is not supported!", field.Name)
 		}
