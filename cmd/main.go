@@ -125,13 +125,15 @@ func populateVars(flagset *flag.FlagSet, value reflect.Value) error {
 				if *ip == nil || (*ip).Equal(net.IPv4zero) || (*ip).Equal(net.IPv6zero) {
 					flagset.IPVar(ip, argName, nil, description)
 				}
+			case reflect.String:
+				flagset.StringSliceVar(addr.(*[]string), argName, nil, description)
 			default:
-				log.Printf("[SKIP] Slice of type %s is not supported!", field.Type.Name())
+				log.Printf("[SKIP] Type of %s is not supported!", field.Name)
 			}
 		case reflect.Map:
-			log.Printf("[SKIP] Type %s is not supported!", field.Name)
+			log.Printf("[SKIP] Type map for %s is not supported!", field.Name)
 		default:
-			log.Printf("[SKIP] Type %s is not supported!", field.Name)
+			log.Printf("[SKIP] Type of %s is not supported!", field.Name)
 		}
 	}
 	return nil
