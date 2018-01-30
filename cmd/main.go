@@ -121,10 +121,9 @@ func populateVars(flagset *flag.FlagSet, value reflect.Value) error {
 		case reflect.Slice:
 			switch field.Type.Elem().Kind() {
 			case reflect.Uint8:
-				ip := (net.IP)(val.Bytes())
-				if ip == nil || ip.Equal(net.IPv4zero) {
-					/// XXX this doesn't work!
-					flagset.IPVar(&ip, argName, nil, description)
+				ip := addr.(*net.IP)
+				if *ip == nil || (*ip).Equal(net.IPv4zero) || (*ip).Equal(net.IPv6zero) {
+					flagset.IPVar(ip, argName, nil, description)
 				}
 			default:
 				log.Printf("[SKIP] Slice of type %s is not supported!", field.Type.Name())
