@@ -37,7 +37,6 @@ func main() {
 
 	command := os.Args[1]
 
-	isAsync := false
 	var method interface{}
 	for _, m := range methods {
 		if c, ok := m.(egoscale.Command); ok {
@@ -46,9 +45,6 @@ func main() {
 			}
 		} else {
 			log.Panicf("%+v is not a command!", m)
-		}
-		if _, ok := m.(egoscale.AsyncCommand); ok {
-			isAsync = ok
 		}
 	}
 
@@ -67,7 +63,7 @@ func main() {
 	flagset.Parse(os.Args[2:])
 
 	out, _ := json.MarshalIndent(&method, "", "  ")
-	fmt.Printf("%s (async=%v)\n", command, isAsync)
+	fmt.Print(command)
 	fmt.Println(string(out))
 }
 
