@@ -23,15 +23,17 @@ func main() {
 
 	if len(os.Args) <= 1 {
 		fmt.Fprintln(os.Stderr, "Usage:")
-		fmt.Fprintf(os.Stderr, "\n  %s command\n\n", os.Args[0])
+		fmt.Fprintln(os.Stderr, "")
+		fmt.Fprintf(os.Stderr, "  %s command\n\n", os.Args[0])
 
-		fmt.Fprintln(os.Stderr, "Available commands:\n")
+		fmt.Fprintln(os.Stderr, "Available commands:")
+		fmt.Fprintln(os.Stderr, "")
 		for _, m := range methods {
 			name := m.(egoscale.Command).APIName()
 			fmt.Fprintf(os.Stderr, "  %s\n", name)
 		}
 		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "no command found")
+		fmt.Fprintln(os.Stderr, "no commands found")
 		os.Exit(1)
 	}
 
