@@ -11,6 +11,11 @@ $(GOPATH)/src/$(PKG):
 	mkdir -p $(shell dirname $(GOPATH)/src/$(PKG))
 	ln -sf ../../../.. $(GOPATH)/src/$(PKG)
 
+.PHONY: generate
+generate:
+	(cd $(GOPATH)/src/$(PKG) && \
+		go generate)
+
 .PHONY: deps
 deps: $(GOPATH)/src/$(PKG)
 	(cd $(GOPATH)/src/$(PKG) && \
