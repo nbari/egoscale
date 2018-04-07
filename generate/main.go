@@ -93,7 +93,8 @@ func main() {
 	}
 
 	if s == nil {
-		fmt.Fprintf(os.Stderr, "type %s not found, are you in right place?\n", *cmd)
+		fmt.Fprintf(os.Stderr, "Definition %q not found. Are you in right place?\n", *cmd)
+		os.Exit(2)
 	}
 
 	type fieldInfo struct {
@@ -142,7 +143,7 @@ func main() {
 				field, ok := fields[p.Name]
 
 				if !ok {
-					fmt.Fprintf(os.Stderr, "Field missing: want %s\n", p.Name)
+					fmt.Fprintf(os.Stderr, "Field missing: expected to find %q\n", p.Name)
 					continue
 				}
 				delete(fields, p.Name)
@@ -153,6 +154,10 @@ func main() {
 				case "integer":
 					if typename != "int" {
 						expected = "int"
+					}
+				case "long":
+					if typename != "int64" {
+						expected = "int64"
 					}
 				case "boolean":
 					if typename != "bool" && typename != "*bool" {
@@ -180,8 +185,8 @@ func main() {
 				}
 			}
 
-			for k, _ := range fields {
-				fmt.Fprintf(os.Stderr, "Field %s was defined but doesn't exist\n", k)
+			for name := range fields {
+				fmt.Fprintf(os.Stderr, "Field %q was defined but doesn't exist\n", name)
 			}
 
 			os.Exit(0)
