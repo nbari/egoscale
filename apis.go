@@ -34,7 +34,7 @@ type APIResponse struct {
 //
 // CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/listApis.html
 type ListAPIs struct {
-	Name string `json:"name,omitempty"`
+	Name string `json:"name,omitempty" doc:"API name"`
 }
 
 // APIName returns the CloudStack API command name

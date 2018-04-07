@@ -11,7 +11,8 @@ import (
 	"go/types"
 	"os"
 	"path/filepath"
-	"strconv"
+	"regexp"
+	"strings"
 
 	"github.com/exoscale/egoscale"
 )
@@ -22,13 +23,13 @@ func main() {
 	// GOPATH
 	//gopath, _ := os.LookupEnv("GOPATH")
 	// GOFILE
-	gofile, _ := os.LookupEnv("GOFILE")
+	//gofile, _ := os.LookupEnv("GOFILE")
 	// GOPACKAGE
 	gopackage, _ := os.LookupEnv("GOPACKAGE")
 	// GOLINE
-	_goline, _ := os.LookupEnv("GOLINE")
-	__goline, _ := strconv.ParseInt(_goline, 10, 32)
-	goline := int(__goline)
+	//_goline, _ := os.LookupEnv("GOLINE")
+	//__goline, _ := strconv.ParseInt(_goline, 10, 32)
+	//goline := int(__goline)
 
 	flag.Parse()
 	if flag.NArg() == 0 {
@@ -37,7 +38,6 @@ func main() {
 	}
 
 	var source = flag.Arg(0)
-	fmt.Printf("%s cmd=%s\n", source, *cmd)
 
 	sourceFile, _ := os.Open(source)
 	decoder := json.NewDecoder(sourceFile)
@@ -79,25 +79,114 @@ func main() {
 			continue
 		}
 
-		pos := fset.Position(id.Pos())
-		if gofile != pos.Filename || goline-pos.Line != -1 {
-			continue
-		}
-
 		typ := obj.Type().Underlying()
+
+		pos := fset.Position(id.Pos())
+
 		switch typ.(type) {
 		case *types.Struct:
-			s = typ.(*types.Struct)
+			if strings.ToLower(obj.Name()) == strings.ToLower(*cmd) {
+				fmt.Printf("%s: %s\n", pos, obj.Name())
+				s = typ.(*types.Struct)
+			}
 		}
 	}
 
+	if s == nil {
+		fmt.Fprintf(os.Stderr, "type %s not found, are you in right place?\n", *cmd)
+	}
+
+	type fieldInfo struct {
+		Var       *types.Var
+		OmitEmpty bool
+		Doc       string
+	}
+
+	re := regexp.MustCompile(`\bjson:"(?P<name>[^,"]+)(?P<omit>,omitempty)?"`)
+	reDoc := regexp.MustCompile(`\bdoc:"(?P<doc>[^"]+)"`)
 	for _, a := range apis.API {
 		if a.Name == *cmd {
-			// TODO
-			fmt.Println("Make the match between")
-			fmt.Printf("json: %#v\n\n", a)
-			fmt.Printf("golang: %#v\n", s)
+			// name to field
+			fields := make(map[string]fieldInfo)
+			for i := 0; i < s.NumFields(); i++ {
+				f := s.Field(i)
+				if !f.IsField() || !f.Exported() {
+					continue
+				}
+
+				tag := s.Tag(i)
+				match := re.FindStringSubmatch(tag)
+				if len(match) == 0 {
+					fmt.Fprintf(os.Stderr, "Field error: no json annotation found for %s.", f.Name())
+					continue
+				}
+				name := match[1]
+				omitempty := len(match) == 3 && match[2] == ",omitempty"
+
+				doc := ""
+				match = reDoc.FindStringSubmatch(tag)
+				if len(match) == 2 {
+					doc = match[1]
+				}
+
+				//fmt.Printf("tag: %q %v\n", match[1], omitempty)
+				fields[name] = fieldInfo{
+					Var:       f,
+					OmitEmpty: omitempty,
+					Doc:       doc,
+				}
+			}
+			//fmt.Printf("fields %v\n", fields)
+
+			for _, p := range a.Params {
+				field, ok := fields[p.Name]
+
+				if !ok {
+					fmt.Fprintf(os.Stderr, "Field missing: want %s\n", p.Name)
+					continue
+				}
+				delete(fields, p.Name)
+
+				typename := field.Var.Type().String()
+				expected := ""
+				switch p.Type {
+				case "integer":
+					if typename != "int" {
+						expected = "int"
+					}
+				case "boolean":
+					if typename != "bool" && typename != "*bool" {
+						expected = "bool"
+					}
+				case "string":
+				case "uuid":
+					if typename != "string" {
+						expected = "string"
+					}
+				case "map":
+					if !strings.HasPrefix(typename, "[]") {
+						expected = "array"
+					}
+				default:
+					fmt.Fprintf(os.Stderr, "Field %q: unknown type: %q <=> %s\n", p.Name, p.Type, field.Var.Type().String())
+				}
+
+				if expected != "" {
+					fmt.Fprintf(os.Stderr, "Field %q expected to be an array, got %s\n", p.Name, typename)
+				}
+
+				if field.Doc != p.Description {
+					fmt.Fprintf(os.Stderr, "Field %q: use `doc:%q`\n", p.Name, p.Description)
+				}
+			}
+
+			for k, _ := range fields {
+				fmt.Fprintf(os.Stderr, "Field %s was defined but doesn't exist\n", k)
+			}
+
 			os.Exit(0)
 		}
 	}
+
+	os.Exit(3)
 }
