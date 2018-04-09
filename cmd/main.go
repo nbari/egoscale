@@ -99,6 +99,14 @@ func populateVars(flagset *flag.FlagSet, value reflect.Value) error {
 			description = "required"
 		}
 
+		if doc, ok := field.Tag.Lookup("doc"); ok {
+			if description != "" {
+				description = fmt.Sprintf("[%s] %s", description, doc)
+			} else {
+				description = doc
+			}
+		}
+
 		val := value.Field(i)
 		addr := val.Addr().Interface()
 		switch val.Kind() {

@@ -38,9 +38,9 @@ type Zone struct {
 type ListZones struct {
 	Available      *bool         `json:"available,omitempty"`
 	DomainID       string        `json:"domainid,omitempty"`
-	ID             string        `json:"id,omitempty"`
-	Keyword        string        `json:"keyword,omitempty"`
-	Name           string        `json:"name,omitempty"`
+	ID             string        `json:"id,omitempty" doc:"the ID of the zone"`
+	Keyword        string        `json:"keyword,omitempty" doc:"List by keyword"`
+	Name           string        `json:"name,omitempty" doc:"the name of the zone"`
 	Page           int           `json:"page,omitempty"`
 	PageSize       int           `json:"pagesize,omitempty"`
 	ShowCapacities *bool         `json:"showcapacities,omitempty"`
