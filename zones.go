@@ -1,6 +1,5 @@
 package egoscale
 
-
 // ListRequest builds the ListZones request
 func (zone *Zone) ListRequest() (ListCommand, error) {
 	req := &ListZones{
