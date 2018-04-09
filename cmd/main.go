@@ -19,8 +19,16 @@ import (
 func main() {
 	// XXX having all the methods! ~> pkgreflect
 	methods := []interface{}{
-		&egoscale.ListVirtualMachines{},
 		&egoscale.ListAPIs{},
+		&egoscale.ListAccounts{},
+		&egoscale.ListEvents{},
+		&egoscale.ListNetworks{},
+		&egoscale.ListNics{},
+		&egoscale.ListPublicIPAddresses{},
+		&egoscale.ListSecurityGroups{},
+		&egoscale.ListServiceOfferings{},
+		&egoscale.ListVirtualMachines{},
+		&egoscale.ListVolumes{},
 		&egoscale.ListZones{},
 		&egoscale.DeployVirtualMachine{},
 	}
@@ -79,8 +87,8 @@ func main() {
 	//fmt.Println(string(out))
 	resp, err := client.Request(method.(egoscale.Command))
 	if err != nil {
-		out, _ := json.MarshalIndent(err, "", "  ")
-		log.Panicf(string(out))
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
 	}
 	out, _ := json.MarshalIndent(&resp, "", "  ")
 	fmt.Println(string(out))
@@ -189,10 +197,19 @@ func populateVars(flagset *flag.FlagSet, value reflect.Value) error {
 			case reflect.String:
 				flagset.StringSliceVar(addr.(*[]string), argName, nil, description)
 			default:
-				log.Printf("[SKIP] Type of %s is not supported!", field.Name)
+				log.Printf("[SKIP] Slice of %s is not supported!", field.Name)
 			}
 		case reflect.Map:
 			log.Printf("[SKIP] Type map for %s is not supported!", field.Name)
+		case reflect.Ptr:
+			switch field.Type.Elem().Kind() {
+			case reflect.Bool:
+				// XXX TODO add post-treatment for those
+				//flagset.Bool(argName, false, description)
+				//flagset.Bool("not-"+argName, false, "(invert) "+description)
+			default:
+				log.Printf("[SKIP] Type of %s is not supported!", field.Name)
+			}
 		default:
 			log.Printf("[SKIP] Type of %s is not supported!", field.Name)
 		}
