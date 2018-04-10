@@ -23,9 +23,11 @@ jobs:
   - stage: test
     script: |
       dep ensure
-      go test -race -coverprofile=coverage.out -covermode=atomic .
+      go test -race .
   - stage: coverage
-    script: codeclimate-test-reporter < coverage.out
+    script: |
+      go test -coverprofile=coverage.out -covermode=atomic .
+      codeclimate-test-reporter < coverage.out
   - stage: build
     script: |
       cd cmd
