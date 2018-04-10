@@ -18,12 +18,17 @@ before_install:
   - chmod +x $GOPATH/bin/dep
   - npm i -g codeclimate-test-reporter
 
-script:
-  - dep ensure
-  - go test -race -coverprofile=coverage.out -covermode=atomic .
-
-after_success:
-  - >
-    if [ "${TRAVIS_GO_VERSION}" = "1.10" ]; then
-      codeclimate-test-reporter < coverage.out;
-    fi
+jobs:
+  include:
+  - stage: test
+    script: |
+      dep ensure
+      go test -race -coverprofile=coverage.out -covermode=atomic .
+  - stage: build
+    script: |
+      cd cmd
+      dep ensure
+      go build
+  - stage: coverage
+    script: codeclimate-test-reporter < coverage.out
+    if: env(TRAVIS_GO_VERSION) = "1.10"
