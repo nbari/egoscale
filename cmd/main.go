@@ -149,10 +149,12 @@ func main() {
 
 	flagset := flag.NewFlagSet(command, flag.ExitOnError)
 	// global setting
-	var region string
 	var dry bool
-	flagset.StringVarP(&region, "region", "r", "cloudstack", "cloudstack.ini section name")
+	var region string
+	var theme string
 	flagset.BoolVarP(&dry, "dry-run", "d", false, "only show the request, don't send it")
+	flagset.StringVarP(&region, "region", "r", "cloudstack", "cloudstack.ini section name")
+	flagset.StringVarP(&theme, "theme", "t", "monokai", "syntax highlighting theme, from pygments")
 
 	val := reflect.ValueOf(method)
 	// we've go a pointer
@@ -180,7 +182,7 @@ func main() {
 		os.Exit(1)
 	}
 	out, _ := json.MarshalIndent(&resp, "", "  ")
-	err = quick.Highlight(os.Stdout, string(out), "json", "terminal16m", "native")
+	err = quick.Highlight(os.Stdout, string(out), "json", "terminal16m", theme)
 	if err != nil {
 		log.Panic(err)
 		os.Exit(1)
