@@ -9,12 +9,38 @@ import (
 	"os/user"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/exoscale/egoscale"
 	"github.com/go-ini/ini"
 	flag "github.com/spf13/pflag"
 )
+
+type boolPtrValue struct {
+	value **bool
+}
+
+func (p *boolPtrValue) String() string {
+	ptr := *(p.value)
+	if ptr == nil {
+		return "unset"
+	}
+	return strconv.FormatBool(*ptr)
+}
+
+func (p *boolPtrValue) Set(value string) error {
+	v, err := strconv.ParseBool(value)
+	if err != nil {
+		return fmt.Errorf("boolean value expected")
+	}
+	*(p.value) = &v
+	return nil
+}
+
+func (*boolPtrValue) Type() string {
+	return "bool"
+}
 
 func main() {
 	// XXX having all the methods! ~> pkgreflect
@@ -204,9 +230,8 @@ func populateVars(flagset *flag.FlagSet, value reflect.Value) error {
 		case reflect.Ptr:
 			switch field.Type.Elem().Kind() {
 			case reflect.Bool:
-				// XXX TODO add post-treatment for those
-				//flagset.Bool(argName, false, description)
-				//flagset.Bool("not-"+argName, false, "(invert) "+description)
+				b := &boolPtrValue{value: addr.(**bool)}
+				flagset.Var(b, argName, description)
 			default:
 				log.Printf("[SKIP] Type of %s is not supported!", field.Name)
 			}
