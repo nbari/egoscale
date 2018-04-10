@@ -1,4 +1,5 @@
 build/
-exo
+cmd/cs
 vendor
 .gopath
+cloudstack.ini
