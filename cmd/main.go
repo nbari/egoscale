@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/alecthomas/chroma/quick"
 	"github.com/exoscale/egoscale"
 	"github.com/go-ini/ini"
 	flag "github.com/spf13/pflag"
@@ -179,7 +180,11 @@ func main() {
 		os.Exit(1)
 	}
 	out, _ := json.MarshalIndent(&resp, "", "  ")
-	fmt.Println(string(out))
+	err = quick.Highlight(os.Stdout, string(out), "json", "terminal16m", "native")
+	if err != nil {
+		log.Panic(err)
+		os.Exit(1)
+	}
 }
 
 func buildClient(region string) (*egoscale.Client, error) {
