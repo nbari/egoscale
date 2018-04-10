@@ -96,7 +96,9 @@ func main() {
 	flagset := flag.NewFlagSet(command, flag.ExitOnError)
 	// global setting
 	var region string
+	var dry bool
 	flagset.StringVarP(&region, "region", "r", "cloudstack", "cloudstack.ini section name")
+	flagset.BoolVarP(&dry, "dry-run", "d", false, "only show the request, don't send it")
 
 	val := reflect.ValueOf(method)
 	// we've go a pointer
@@ -106,11 +108,18 @@ func main() {
 	}
 	flagset.Parse(os.Args[2:])
 
-	client, _ := buildClient(region)
+	// Show request and quit
+	if dry {
+		request, err := json.MarshalIndent(method, "", "  ")
+		if err != nil {
+			log.Panic(err)
+		}
 
-	// Request
-	//out, _ := json.MarshalIndent(&method, "", "  ")
-	//fmt.Println(string(out))
+		fmt.Println(string(request))
+		os.Exit(0)
+	}
+
+	client, _ := buildClient(region)
 	resp, err := client.Request(method.(egoscale.Command))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
