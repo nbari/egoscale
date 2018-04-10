@@ -24,11 +24,10 @@ jobs:
     script: |
       dep ensure
       go test -race -coverprofile=coverage.out -covermode=atomic .
+  - stage: coverage
+    script: codeclimate-test-reporter < coverage.out
   - stage: build
     script: |
       cd cmd
       dep ensure
       go build
-  - stage: coverage
-    script: codeclimate-test-reporter < coverage.out
-    if: env(TRAVIS_GO_VERSION) = "1.10"
