@@ -26,6 +26,7 @@ jobs:
       go test -race .
   - stage: coverage
     script: |
+      dep ensure
       go test -coverprofile=coverage.out -covermode=atomic .
       codeclimate-test-reporter < coverage.out
   - stage: build
